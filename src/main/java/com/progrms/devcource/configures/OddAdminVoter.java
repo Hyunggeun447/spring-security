@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import static org.apache.commons.lang3.math.NumberUtils.toInt;
+//import static org.apache.commons.lang3.math.NumberUtils.toInt;
 
 
 public class OddAdminVoter implements AccessDecisionVoter<FilterInvocation> {
@@ -33,12 +33,12 @@ public class OddAdminVoter implements AccessDecisionVoter<FilterInvocation> {
         User user = (User) authentication.getPrincipal();
         String name = user.getUsername();
         Matcher matcher = PATTERN.matcher(name);
-        if (matcher.find()) {
-            int number = toInt(matcher.group(), 0);
-            if (number % 2 == 1) {
-                return ACCESS_GRANTED;
-            }
-        }
+//        if (matcher.find()) {
+//            int number = toInt(matcher.group(), 0);
+//            if (number % 2 == 1) {
+//                return ACCESS_GRANTED;
+//            }
+//        }
         return ACCESS_DENIED;
     }
 

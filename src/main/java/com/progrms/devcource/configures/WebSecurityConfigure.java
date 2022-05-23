@@ -1,6 +1,7 @@
 package com.progrms.devcource.configures;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,12 +17,17 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.jdbc.JdbcDaoImpl;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.expression.WebExpressionVoter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +35,39 @@ import java.util.List;
 @Slf4j
 @EnableWebSecurity
 public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
+
+
+    private DataSource dataSource;
+
+    @Autowired
+    public void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.jdbcAuthentication()
+                .dataSource(dataSource)
+                .usersByUsernameQuery(
+                        "SELECT " +
+                                "login_id, passwd, true " +
+                                "FROM " +
+                                "users " +
+                                "WHERE " +
+                                "login_id = ?"
+                )
+                .groupAuthoritiesByUsername(
+                        "SELECT " +
+                                "u.login_id, g.name, p.name " +
+                                "FROM " +
+                                "users u JOIN groups g ON u.group_id = g.id " +
+                                "LEFT JOIN group_permission gp ON g.id = gp.group_id " +
+                                "JOIN permissions p ON p.id = gp.permission_id " +
+                                "WHERE " +
+                                "u.login_id = ?"
+                )
+                .getUserDetailsService().setEnableAuthorities(false);
+    }
 
     @Bean
     @Qualifier("myAsyncTaskExecutor")
@@ -49,17 +88,40 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
 
     @Override
     public void configure(WebSecurity web) {
-        web.ignoring().antMatchers("/assets/**");
+        web.ignoring().antMatchers("/assets/**", "/h2-console/**");
     }
 
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.inMemoryAuthentication()
-                .withUser("user").password("{noop}user123").roles("USER")
-                .and()
-                .withUser("admin01").password("{noop}admin123").roles("ADMIN")
-                .and()
-                .withUser("admin02").password("{noop}admin123").roles("ADMIN");
+//    @Bean
+//    public UserDetailsService userDetailsService(DataSource dataSource){
+//        JdbcDaoImpl jdbcDao = new JdbcDaoImpl();
+//        jdbcDao.setDataSource(dataSource);
+//        jdbcDao.setEnableAuthorities(false);
+//        jdbcDao.setEnableGroups(true);
+//        jdbcDao.setUsersByUsernameQuery(
+//            "SELECT " +
+//                "login_id, passwd, true " +
+//            "FROM " +
+//                "users " +
+//            "WHERE " +
+//                "login_id = ?"
+//        );
+//
+//        jdbcDao.setGroupAuthoritiesByUsernameQuery(
+//            "SELECT " +
+//                "u.login_id, g.name, p.name " +
+//            "FROM " +
+//                "users u JOIN groups g ON u.group_id = g.id " +
+//                "LEFT JOIN group_permission gp ON g.id = gp.group_id " +
+//                "JOIN permissions p ON p.id = gp.permission_id " +
+//            "WHERE " +
+//                "u.login_id = ?"
+//        );
+//        return jdbcDao;
+//    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
@@ -88,7 +150,7 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/me").hasAnyRole("USER", "ADMIN")
+                .antMatchers("/me", "/asyncHello", "/someMethod").hasAnyRole("USER", "ADMIN")
                 .antMatchers("/admin").access("isFullyAuthenticated() and hasRole('ADMIN')")
                 .anyRequest().permitAll()
                 .and()
