@@ -1,5 +1,6 @@
 package com.progrms.devcource.configures;
 
+import com.progrms.devcource.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -36,37 +37,44 @@ import java.util.List;
 @EnableWebSecurity
 public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
 
+    //    private DataSource dataSource;
+//    @Autowired
+//    public void setDataSource(DataSource dataSource) {
+//        this.dataSource = dataSource;
+//    }
 
-    private DataSource dataSource;
+    private UserService userService;
 
     @Autowired
-    public void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public void setUserService(UserService userService) {
+        this.userService = userService;
     }
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.jdbcAuthentication()
-                .dataSource(dataSource)
-                .usersByUsernameQuery(
-                        "SELECT " +
-                                "login_id, passwd, true " +
-                                "FROM " +
-                                "users " +
-                                "WHERE " +
-                                "login_id = ?"
-                )
-                .groupAuthoritiesByUsername(
-                        "SELECT " +
-                                "u.login_id, g.name, p.name " +
-                                "FROM " +
-                                "users u JOIN groups g ON u.group_id = g.id " +
-                                "LEFT JOIN group_permission gp ON g.id = gp.group_id " +
-                                "JOIN permissions p ON p.id = gp.permission_id " +
-                                "WHERE " +
-                                "u.login_id = ?"
-                )
-                .getUserDetailsService().setEnableAuthorities(false);
+        auth.userDetailsService(userService);
+
+//        auth.jdbcAuthentication()
+//                .dataSource(dataSource)
+//                .usersByUsernameQuery(
+//                        "SELECT " +
+//                                "login_id, passwd, true " +
+//                                "FROM " +
+//                                "users " +
+//                                "WHERE " +
+//                                "login_id = ?"
+//                )
+//                .groupAuthoritiesByUsername(
+//                        "SELECT " +
+//                                "u.login_id, g.name, p.name " +
+//                                "FROM " +
+//                                "users u JOIN groups g ON u.group_id = g.id " +
+//                                "LEFT JOIN group_permission gp ON g.id = gp.group_id " +
+//                                "JOIN permissions p ON p.id = gp.permission_id " +
+//                                "WHERE " +
+//                                "u.login_id = ?"
+//                )
+//                .getUserDetailsService().setEnableAuthorities(false);
     }
 
     @Bean
