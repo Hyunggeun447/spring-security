@@ -1,5 +1,6 @@
 package com.progrms.devcource.configures;
 
+import com.progrms.devcource.jwt.Jwt;
 import com.progrms.devcource.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +44,14 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
 //        this.dataSource = dataSource;
 //    }
 
+    private JwtConfigure jwtConfigure;
+
     private UserService userService;
+
+    @Autowired
+    public void setJwtConfigure(JwtConfigure jwtConfigure) {
+        this.jwtConfigure = jwtConfigure;
+    }
 
     @Autowired
     public void setUserService(UserService userService) {
@@ -133,6 +141,15 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
+    public Jwt jwt() {
+        return new Jwt(
+                jwtConfigure.getIssuer(),
+                jwtConfigure.getClientSecret(),
+                jwtConfigure.getExpirySeconds()
+        );
+    }
+
+    @Bean
     public AccessDecisionManager accessDecisionManager(){
         List<AccessDecisionVoter<?>> decisionVoters = new ArrayList<>();
         decisionVoters.add(new WebExpressionVoter());
@@ -158,55 +175,65 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/me", "/asyncHello", "/someMethod").hasAnyRole("USER", "ADMIN")
-                .antMatchers("/admin").access("isFullyAuthenticated() and hasRole('ADMIN')")
+                .antMatchers("/api/user/me").hasAnyRole("USER", "ADMIN")
+//                .antMatchers("/me", "/asyncHello", "/someMethod").hasAnyRole("USER", "ADMIN")
+//                .antMatchers("/admin").access("isFullyAuthenticated() and hasRole('ADMIN')")
                 .anyRequest().permitAll()
                 .and()
 
+                .csrf()
+                .disable()
+                .headers()
+                .disable()
+
                 .formLogin()
-                .defaultSuccessUrl("/")
-                .permitAll()
-                .and()
+//                .defaultSuccessUrl("/")
+//                .permitAll()
+//                .and()
+                .disable()
 
                 .httpBasic()
-                .and()
+                .disable()
 
                 .logout()
-                .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                .logoutSuccessUrl("/")
-                .invalidateHttpSession(true)
-                .clearAuthentication(true)
-                .and()
+//                .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+//                .logoutSuccessUrl("/")
+//                .invalidateHttpSession(true)
+//                .clearAuthentication(true)
+//                .and()
+                .disable()
 
                 .rememberMe()
-                .key("my-remember-me")
-                .rememberMeParameter("remember-me")
-                .tokenValiditySeconds(300)
+//                .key("my-remember-me")
+//                .rememberMeParameter("remember-me")
+//                .tokenValiditySeconds(300)
+//                .and()
+                .disable()
+
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
 
-                .anonymous()
-                .principal("thisIsAnonymousUser")
-                .authorities("ROLE_ANONYMOUS", "ROLE_UNKNOWN")
-                .and()
+//                .anonymous()
+//                .principal("thisIsAnonymousUser")
+//                .authorities("ROLE_ANONYMOUS", "ROLE_UNKNOWN")
+//                .and()
 
                 .exceptionHandling()
                 .accessDeniedHandler(accessDeniedHandler())
                 .and()
 
-                .sessionManagement()
-                .sessionFixation().changeSessionId()
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .invalidSessionUrl("/")
-                .maximumSessions(1)
-                .maxSessionsPreventsLogin(false)
-                .and()
-                .and()
+//                .sessionManagement()
+//                .sessionFixation().changeSessionId()
+//                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+//                .invalidSessionUrl("/")
+//                .maximumSessions(1)
+//                .maxSessionsPreventsLogin(false)
+//                .and()
+//                .and()
 
 //                .requiresChannel()
 //                .anyRequest().requiresSecure()
-
-                .exceptionHandling()
-                .accessDeniedHandler(accessDeniedHandler())
         ;
     }
 
