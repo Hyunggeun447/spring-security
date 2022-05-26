@@ -3,6 +3,7 @@ package com.progrms.devcource.configures;
 import com.progrms.devcource.jwt.Jwt;
 import com.progrms.devcource.jwt.JwtAuthenticationFilter;
 import com.progrms.devcource.jwt.JwtAuthenticationProvider;
+import com.progrms.devcource.jwt.JwtSecurityContextRepository;
 import com.progrms.devcource.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,7 @@ import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecu
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.expression.WebExpressionVoter;
 import org.springframework.security.web.context.SecurityContextPersistenceFilter;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import javax.servlet.http.HttpServletResponse;
@@ -189,6 +191,11 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
         return super.authenticationManagerBean();
     }
 
+    public SecurityContextRepository securityContextRepository() {
+        Jwt jwt = getApplicationContext().getBean(Jwt.class);
+        return new JwtSecurityContextRepository(jwtConfigure.getHeader(), jwt);
+    }
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
@@ -252,6 +259,10 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
 
 //                .requiresChannel()
 //                .anyRequest().requiresSecure()
+
+                .securityContext()
+                .securityContextRepository(securityContextRepository())
+                .and()
 
                 .addFilterAfter(jwtAuthenticationFilter(), SecurityContextPersistenceFilter.class)
         ;
