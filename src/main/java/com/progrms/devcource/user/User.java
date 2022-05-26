@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.persistence.*;
 
@@ -27,4 +28,10 @@ public class User {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "group_id")
     private Group group;
-}
+
+    public void checkPassword(PasswordEncoder passwordEncoder, String credentials) {
+        if (!passwordEncoder.matches(credentials, passwd)) {
+            throw new IllegalArgumentException("Bad credentials");
+        }
+    }
+    }

@@ -2,6 +2,7 @@ package com.progrms.devcource.configures;
 
 import com.progrms.devcource.jwt.Jwt;
 import com.progrms.devcource.jwt.JwtAuthenticationFilter;
+import com.progrms.devcource.jwt.JwtAuthenticationProvider;
 import com.progrms.devcource.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.access.AccessDecisionVoter;
 import org.springframework.security.access.vote.UnanimousBased;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -46,63 +48,62 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
 //        this.dataSource = dataSource;
 //    }
 
-    private JwtConfigure jwtConfigure;
+    private final JwtConfigure jwtConfigure;
 
-    private UserService userService;
-
-    @Autowired
-    public void setJwtConfigure(JwtConfigure jwtConfigure) {
+    public WebSecurityConfigure(JwtConfigure jwtConfigure) {
         this.jwtConfigure = jwtConfigure;
     }
 
-    @Autowired
-    public void setUserService(UserService userService) {
-        this.userService = userService;
-    }
+//        private UserService userService;
+//
+//    @Autowired
+//    public void setUserService(UserService userService) {
+//        this.userService = userService;
+//    }
 
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userService);
+//    @Override
+//    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+//        auth.userDetailsService(userService);
+//
+////        auth.jdbcAuthentication()
+////                .dataSource(dataSource)
+////                .usersByUsernameQuery(
+////                        "SELECT " +
+////                                "login_id, passwd, true " +
+////                                "FROM " +
+////                                "users " +
+////                                "WHERE " +
+////                                "login_id = ?"
+////                )
+////                .groupAuthoritiesByUsername(
+////                        "SELECT " +
+////                                "u.login_id, g.name, p.name " +
+////                                "FROM " +
+////                                "users u JOIN groups g ON u.group_id = g.id " +
+////                                "LEFT JOIN group_permission gp ON g.id = gp.group_id " +
+////                                "JOIN permissions p ON p.id = gp.permission_id " +
+////                                "WHERE " +
+////                                "u.login_id = ?"
+////                )
+////                .getUserDetailsService().setEnableAuthorities(false);
+//    }
 
-//        auth.jdbcAuthentication()
-//                .dataSource(dataSource)
-//                .usersByUsernameQuery(
-//                        "SELECT " +
-//                                "login_id, passwd, true " +
-//                                "FROM " +
-//                                "users " +
-//                                "WHERE " +
-//                                "login_id = ?"
-//                )
-//                .groupAuthoritiesByUsername(
-//                        "SELECT " +
-//                                "u.login_id, g.name, p.name " +
-//                                "FROM " +
-//                                "users u JOIN groups g ON u.group_id = g.id " +
-//                                "LEFT JOIN group_permission gp ON g.id = gp.group_id " +
-//                                "JOIN permissions p ON p.id = gp.permission_id " +
-//                                "WHERE " +
-//                                "u.login_id = ?"
-//                )
-//                .getUserDetailsService().setEnableAuthorities(false);
-    }
+//    @Bean
+//    @Qualifier("myAsyncTaskExecutor")
+//    public ThreadPoolTaskExecutor threadPoolTaskExecutor(){
+//        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+//        executor.setCorePoolSize(3);
+//        executor.setMaxPoolSize(5);
+//        executor.setThreadNamePrefix("my-executor-");
+//        return executor;
+//    }
 
-    @Bean
-    @Qualifier("myAsyncTaskExecutor")
-    public ThreadPoolTaskExecutor threadPoolTaskExecutor(){
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(3);
-        executor.setMaxPoolSize(5);
-        executor.setThreadNamePrefix("my-executor-");
-        return executor;
-    }
-
-    @Bean
-    public DelegatingSecurityContextAsyncTaskExecutor taskExecutor(
-            @Qualifier("myAsyncTaskExecutor") ThreadPoolTaskExecutor delegate
-    ) {
-        return new DelegatingSecurityContextAsyncTaskExecutor(delegate);
-    }
+//    @Bean
+//        public DelegatingSecurityContextAsyncTaskExecutor taskExecutor(
+//                @Qualifier("myAsyncTaskExecutor") ThreadPoolTaskExecutor delegate
+//    ) {
+//            return new DelegatingSecurityContextAsyncTaskExecutor(delegate);
+//    }
 
     @Override
     public void configure(WebSecurity web) {
@@ -171,6 +172,21 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
             response.getWriter().flush();
             response.getWriter().close();
         };
+    }
+
+    @Bean
+    public JwtAuthenticationProvider jwtAuthenticationProvider(UserService userService, Jwt jwt) {
+        return new JwtAuthenticationProvider(jwt, userService);
+    }
+
+    @Autowired
+    public void configureAuthentication(AuthenticationManagerBuilder builder, JwtAuthenticationProvider provider) {
+        builder.authenticationProvider(provider);
+    }
+    @Bean
+    @Override
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
     }
 
     @Override
