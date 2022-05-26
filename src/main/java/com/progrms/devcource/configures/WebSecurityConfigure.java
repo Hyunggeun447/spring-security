@@ -1,6 +1,7 @@
 package com.progrms.devcource.configures;
 
 import com.progrms.devcource.jwt.Jwt;
+import com.progrms.devcource.jwt.JwtAuthenticationFilter;
 import com.progrms.devcource.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.expression.WebExpressionVoter;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import javax.servlet.http.HttpServletResponse;
@@ -234,7 +236,14 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
 
 //                .requiresChannel()
 //                .anyRequest().requiresSecure()
+
+                .addFilterAfter(jwtAuthenticationFilter(), SecurityContextPersistenceFilter.class)
         ;
+    }
+
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        Jwt jwt = getApplicationContext().getBean(Jwt.class);
+        return new JwtAuthenticationFilter(jwtConfigure.getHeader(), jwt);
     }
 
 }
